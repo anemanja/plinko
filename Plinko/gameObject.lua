@@ -13,20 +13,6 @@ function GameObject: init ( g )
 end
 
 function GameObject: addChild ( g )
-    --[[
-    if getmetatable(g) ~= self then 
-        print ("Game Object: Add Child 0=C===> Child must be a Game Object.") 
-        return
-    end
-    for _, child in ipairs(self.children) do
-        if child == g then 
-            print ("Game Object: Add Child 0=C===> Child already added.") 
-            return
-        end
-    end
-
-    --]]
-    
     g.parent = self
     local i = 1
     for _, child in ipairs(self.children) do 
@@ -62,10 +48,10 @@ end
 
 function GameObject: draw()
     local parentPosition
-    if parent == nil then 
+    if self.parent == nil then 
         parentPosition = Vector2.zero
     else
-        parentPosition = parent.position
+        parentPosition = self.parent.position
     end
 
     local relativePosition = parentPosition + self.position
