@@ -14,7 +14,7 @@ Rigidbody = {
     boundingBoxRadius = nil, -- used only when shape == "circle"
     mass = 1,
     collisionCategory = nil,
-    collisionMask = nil, -- denotes with what categories of rigibodies this rigidbody can collide
+    collisionMask = nil, -- denotes what categories of rigibodies affect this rigidbody when they collide
     onCollide = function (self, r) end,
     force = nil,
     gameObject = nil,
@@ -41,9 +41,9 @@ function Rigidbody: init ( r )
         -- set bounding box as a circle containing the game object
         r.boundingBoxAnchor = r.boundingBoxAnchor or Vector2:init(0.5, 0.5)
         if r.gameObject.size.y < r.gameObject.size.x then
-            r.boundingBoxRadius = r.gameObject.size.x / 2
+            r.boundingBoxRadius = r.boundingBoxRadius or r.gameObject.size.x / 2
         else
-            r.boundingBoxRadius = r.gameObject.size.y / 2
+            r.boundingBoxRadius = r.boundingBoxRadius or r.gameObject.size.y / 2
         end
     end
 
@@ -72,7 +72,7 @@ function Rigidbody: init ( r )
     r.collisionMask = r.collisionMask or { [World.allCategories] = true }
     r.absolutePosition = Vector2:init(unpack(r.gameObject:updateAbsolutePosition()))
 
-    table.insert( World.rigidbodies, r )
+    World.rigidbodies[#World.rigidbodies + 1] = r
     return r
 end
 
@@ -136,26 +136,23 @@ end
 function Rigidbody: didCollide ( r )
     if self:boundingBox() == r:boundingBox()  then
         if self.shape == "circle" and  r.shape == "circle" then
-            self: didCircleCollideWithCircle(r)
-            return
+            return self: didCircleCollideWithCircle(r)
         end
         if self.shape == "rect" and  r.shape == "rect" then
-            self: didSquareCollideWithSquare(r)
-            return
+            return self: didSquareCollideWithSquare(r)
         end
         if self.shape == "circle" then
-            self: didCircleCollideWithSquare(r)
-            return
+            return self: didCircleCollideWithSquare(r)
         end
-        r: didCircleCollideWithSquare(self)
+        return r: didCircleCollideWithSquare(self)
     end
     return false
 end
 
 function Rigidbody: didCircleCollideWithCircle ( r )
-    local r = self.boundingBoxSize.x + r.boundingBoxSize.x
-    local d = self.gameObject:absolutePosition() - r.gameObject:absolutePosition()
-    if r * r < d:power() then 
+    local radiuses = self.boundingBoxSize.x + r.boundingBoxSize.x
+    local distance = self.gameObject.absolutePosition - r.gameObject.absolutePosition
+    if radiuses * radiuses > distance:power() then 
         return true 
     end
     return false
@@ -186,18 +183,19 @@ World = {
 function World.update (dt) 
     -- check for collisions and call affected object's onCollide functions
     local collisionPairs = {}
-    for _, r in ipairs(World.rigidbodies) do
+    local num = #World.rigidbodies
+    for _, r in pairs(World.rigidbodies) do
         if World.categoryAffectsMask(World.collisionCategory, r.collisionMask) then
             r:applyForce(World.gravity)
         end
-        if r.mask ~= 0 then -- objects with zero mask cannot be affected by colllisions with any category
-            for _, c in  ipairs(World.rigidbodies) do
+        if World.hasMask(r.collisionMask) then -- objects with zero mask cannot be affected by colllisions with any category
+            for _, c in  pairs(World.rigidbodies) do
                 if r ~= c then
                     -- check if r can be affected by c's category
                     if World.categoryAffectsMask(c.collisionCategory, r.collisionMask) then
                         -- if we already know they collided, no need to calculate it again, just call the function
                         if collisionPairs[c] == r or r:didCollide(c) then
-                            r:hasCollided(c)
+                            r:onCollide(c)
                             collisionPairs[r] = c
                         end
                     end
@@ -221,6 +219,14 @@ end
 function World.categoryAffectsMask ( category, mask )
     if mask[World.allCategories] then return true end
     if mask[category] then return true end
+    return false
+end
+
+function World.hasMask (mask)
+    if mask == nil then return false end
+    for _, c in pairs(mask) do
+        if c then return true end
+    end
     return false
 end
 

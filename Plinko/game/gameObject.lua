@@ -20,6 +20,7 @@ function GameObject: init ( g )
 
     -- children must be initialized
     g.children = g.children or {}
+    g.absolutePosition = self:updateAbsolutePosition()
 
     return g
 end

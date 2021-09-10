@@ -2,53 +2,42 @@ require("game/gameObject")
 require("game/physics")
 require("convenience/rect")
 require("convenience/vector")
+require("plinkoBoard")
 
-local imagePath = function (name) return "resources/images/"..name..".png" end
+imageResource = function (name) return "resources/images/"..name..".png" end
+soundResource = function (name) return "resources/sounds/"..name..".wav" end
 
 local scene
 local disc 
 local peg
 
-local sprite = love.graphics.newImage(imagePath("disc"))
+local sprite = love.graphics.newImage(imageResource("disc"))
 
-local screen = Vector2: init(700, 1000)
+local screen = Vector2: init(700, 900)
 
 function love.load(arg)
     if arg[#arg] == "-debug" then require("mobdebug").start() end
-    love.window.setMode( screen.x, screen.y, {highdpi = true, msaa = 2} )
-    World.drawBoundingBoxes = true
-    p = Vector2:init ( 20, 0 )
-    s = Vector2:init ( 20, 20 )
 
-    scene = GameObject: init { 
+    love.window.setMode( screen.x, screen.y, {highdpi = true, msaa = 2} )
+
+    World.drawBoundingBoxes = true
+
+    scene = PlinkoBoard: init { 
         position = Vector2:init( 0, 0 ),
         size = Vector2:init( screen.x, screen.y ),
-        imageName = imagePath("scene")
+        imageName = imageResource("scene"),
+        levels = {}
     }
-
-    disc = GameObject: init {
-        position = Vector2:init( 300, 100 ),
-        size = Vector2: init( 50, 50 ),
-        zOrder = 1,
-        imageName = imagePath("disc")
+    scene.levels[1] = {
+        score = 0,
+        winningScore = 5,
+        discs = 3,
+        name = "Level III",
+        rows = 10,
+        rewards = { 1, 2, 3, 0, 10, 0, 3, 2, 1 }
     }
-
-    r = Rigidbody: init {
-        gameObject = disc
-    }
-
-    peg = GameObject: init { 
-        position = Vector2:init( 100, 300 ),
-        size = Vector2:init( 50, 50 ),
-        zOrder = 2,
-        imageName = imagePath("peg")
-    }
-
-    scene:addChild(disc)
-    scene:addChild(peg)
+    
     scene:load()
-
-    print (p)
 end
 
 function love.update(dt)
@@ -58,6 +47,4 @@ end
 
 function love.draw()
     scene: draw()
-    love.graphics.draw(sprite, p.x, p.y)
-    love.graphics.print(#scene.children, 5, 50, 0, 2, 2, 0, 0)
 end
