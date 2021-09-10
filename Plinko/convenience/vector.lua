@@ -1,4 +1,6 @@
-Vector2 = { x=0, y=0 }
+Vector2 = { 
+    x=0, y=0 
+}
 
 function Vector2: init (xp, yp)
     local v = {}
@@ -9,13 +11,8 @@ function Vector2: init (xp, yp)
     return v
 end
 
-Vector2.zero = Vector2: init (0, 0)
-Vector2.one = Vector2: init (1, 1)
-
-function Vector2: coordinates() 
-    if self == nil then self = Vector2.zero end
-    return self.x, self.y
-end
+function Vector2.zero() return Vector2: init (0, 0) end
+function Vector2.one() return Vector2: init (1, 1) end
 
 function Vector2.__add (v1, v2)
     return Vector2: init ( v1.x + v2.x, v1.y + v2.y )
@@ -49,6 +46,7 @@ function Vector2: intensity()
     return math.sqrt( Vector2: power() )
 end
 
+-- we will avoid using sqrt whenever possible
 function Vector2: power()
     return self.x * self.x + self.y * self.y
 end
@@ -57,5 +55,3 @@ function Vector2: normalized()
     local i = Vector2: intensity()
     return Vector2: init (self.x / i, self.y / i)
 end
-
-
