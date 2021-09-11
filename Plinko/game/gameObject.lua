@@ -41,8 +41,8 @@ end
 function GameObject: removeChild (g)
     for _, child in ipairs(self.children) do
         if child == g then 
+            child.parent = nil
             child = nil 
-            g.parent = nil
         end
     end
 end
@@ -50,6 +50,12 @@ end
 function GameObject: updateAbsolutePosition ()
     if self.parent == nil then return self.position end
     return self.position + self.parent:updateAbsolutePosition()
+end
+
+function GameObject: getRelativePositionOfAbsolute(newAbsolutePosition)
+    local parentAbsolutePosition = Vector2:init(unpack(self.position))
+    if parent then parentAbsolutePosition = parent.absolutePosition end
+    return newAbsolutePosition - parentAbsolutePosition
 end
 
 function GameObject: load()

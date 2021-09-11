@@ -71,6 +71,7 @@ function Rigidbody: init ( r )
     r.collisionCategory = r.collisionCategory or World.rigidbodyCategory
     r.collisionMask = r.collisionMask or { [World.allCategories] = true }
     r.absolutePosition = Vector2:init(unpack(r.gameObject:updateAbsolutePosition()))
+    r.onDraw = r.onDraw or false
 
     World.rigidbodies[#World.rigidbodies + 1] = r
     return r
@@ -96,6 +97,8 @@ end
 function Rigidbody: draw () 
     -- game object is drawn first
     self.rigidbody.gameObjectsDraw(self)
+
+    if self.rigidbody.onDraw then self.rigidbody.onDraw(self) end
 
     red, green, blue, alpha = love.graphics.getColor()
     love.graphics.setColor(1, 0, 0, 1)
@@ -230,3 +233,18 @@ function World.hasMask (mask)
     return false
 end
 
+function World.removeRigidbody ( r )
+    for i, ri in ipairs(World.rigidbodies) do
+        if ri == r then 
+            World.rigidbodies[ri] = nil 
+        end
+    end
+end 
+
+function World.removeRigidbodyOfGameObject ( g )
+    for i, ri in ipairs(World.rigidbodies) do
+        if ri == g.rigidbody then 
+            World.rigidbodies[ri] = nil 
+        end
+    end
+end 
