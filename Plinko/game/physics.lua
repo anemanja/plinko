@@ -121,31 +121,10 @@ function Rigidbody: draw ()
     love.graphics.setColor(red, green, blue, alpha)
 end
 
--- END of WARNING!
-
-function Rigidbody: bounce(r, dt)
-    if not self.shouldBounce then return end 
-        local d = self.absolutePosition - r.absolutePosition
-        local D = r.boundingBoxRadius + self.boundingBoxRadius + 2
-
-        local dn = d:normalized()
-        local disp = dn:scale(D)
-        local absPos = r.absolutePosition + disp
-        self.gameObject.position = self.gameObject.position - (self.absolutePosition - absPos)
-        self.gameObject.absolutePosition = self.gameObject:updateAbsolutePosition()
-        self:updateAbsolutePosition()
-       
-    -- if r is a circle, we need to find the tangent first, and then just bounce it from it like from a wall.
-    --if r.shape == "circle" then
-
-        self.velocity = self.velocity - d:scale(1.5*(self.velocity * d) / d:power())
-        --return
-    --end
-
-    -- if r is a square, we need to find out from which of its sides is the self bouncing of
-
-
+function Rigidbody: onRemove()
+    World.removeRigidbodyOfGameObject(self)
 end
+-- END of WARNING!
 
 function Rigidbody: applyForce (f)
     self.force = self.force or Vector2.zero()
@@ -235,7 +214,6 @@ function World.update (dt)
                     if World.categoryAffectsMask(c.collisionCategory, r.collisionMask) then
                         -- if we already know they collided, no need to calculate it again, just call the function
                         if collisionPairs[c] == r or r:didCollide(c) then
-                            r:bounce(c, dt)
                             r:onCollide(c)
                             collisionPairs[r] = c
                         end

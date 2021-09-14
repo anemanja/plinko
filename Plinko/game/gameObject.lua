@@ -41,9 +41,16 @@ end
 function GameObject: removeChild (g)
     for _, child in ipairs(self.children) do
         if child == g then 
+            if child.onRemove then child:onRemove() end
             child.parent = nil
             child = nil 
         end
+    end
+end
+
+function GameObject: clear()
+    for _, child in ipairs(self.children) do
+        self:removeChild(child)
     end
 end
 

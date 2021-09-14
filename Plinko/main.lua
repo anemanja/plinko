@@ -23,7 +23,7 @@ function love.load(arg)
     love.window.setMode( screen.x, screen.y, {highdpi = true, msaa = 2} )
     love.mouse.setVisible(false)
 
-    World.drawBoundingBoxes = true
+    --World.drawBoundingBoxes = true
 
     scene = PlinkoBoard: init { 
         position = Vector2:init( 0, 0 ),
@@ -31,6 +31,7 @@ function love.load(arg)
         imageName = imageResourcePNG("scene"),
         levels = {}
     }
+    --[[
     scene.levels[1] = {
         score = 0,
         winningScore = 5,
@@ -41,13 +42,21 @@ function love.load(arg)
     }
     scene.levels[2] = {
         score = 0,
-        winningScore = 5,
+        winningScore = 30,
+        discsCount = 5,
+        name = "Level Grand",
+        rows = 30,
+        rewards = { 1, 2, 3, 0, 10, 0, 3, 2, 1, 2, 3, 6, 0, 50, 0, 6, 3, 2, 1, 2, 3, 0, 10, 0, 3, 2, 1 }
+    }
+    scene.levels[2] = {
+        score = 0,
+        winningScore = 10,
         discsCount = 2,
         name = "Level III",
         rows = 10,
         rewards = { 1, -1, 5, -1, 15, -1, 5, -1, 1 }
     }
-    
+    ]]--
     scene:load()
 end
 
