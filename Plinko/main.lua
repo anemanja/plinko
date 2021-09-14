@@ -34,7 +34,7 @@ function love.load(arg)
     scene.levels[1] = {
         score = 0,
         winningScore = 5,
-        discsCount = 1,
+        discsCount = 5,
         name = "Level II",
         rows = 10,
         rewards = { 1, 2, 3, 0, 10, 0, 3, 2, 1 }

@@ -25,7 +25,7 @@ function PlinkoBoard: loadLevel(levelIndex)
     self.currentLevel = levelIndex
     self.rows = self.levels[levelIndex].rows or 10
     self.rewards = self.levels[levelIndex].rewards or {levelIndex, levelIndex*2, levelIndex*3, 0, levelIndex*10, 0, levelIndex*3, levelIndex*2, levelIndex}
-    self.state = PlinkoBoardStates.TRANSITION
+    self.state = self.state or PlinkoBoardStates.TRANSITION
     self.discsLanded = 0
     self.children = {}
 
@@ -73,7 +73,7 @@ end
 
 function PlinkoBoard: setupPegArea(pegSpaceWidth)
     local pegAreaHeight = pegSpaceWidth * (self.rows + 1)
-    local pegRadius = pegSpaceWidth * 0.1
+    local pegRadius = pegSpaceWidth * 0.05
 
     local pegHitSound = love.sound.newSoundData(soundResource("peg-hit-sfx.wav"))
 
@@ -130,23 +130,32 @@ function PlinkoBoard: setupRewardsArea(pegSpaceWidth)
         local rewardBox = GameObject: init { 
             position = p,
             size = Vector2:init( pegSpaceWidth, pegSpaceWidth ),
-            zOrder = 1
+            zOrder = 1,
+            reward = reward,
+            draw = function (self)
+                local r, g, b, a = love.graphics.getColor() 
+                local rCoef = self.reward / maxReward
+                local color = love.graphics.setColor(0.3 *rCoef, 0.9 *rCoef, 0.1 *rCoef, 0.5)
+                if self.isColliding then love.graphics.setColor(0.9, 0.1, 0.2, 0.5) end
+                love.graphics.rectangle("fill", p.x, p.y, pegSpaceWidth, pegSpaceWidth)
+                love.graphics.setColor(r, g, b, a)
+                love.graphics.print(self.reward, p.x, p.y + pegSpaceWidth, -pi_half, 3)
+            end
         }
         local rewardR = Rigidbody: init {
             gameObject = rewardBox,
             shape = "square",
             collisionCategory = "rewardsCategory",
             collisionMask = { discsCategory = true },
-            isColliding = false,
             sfx = love.audio.newSource(rewardSfx, "static"),
             onCollide = function (self, r) 
-                if not self.isColliding then 
+                if not r.isRewarded then 
                     if not self.sfx:isPlaying() then
                         self.sfx:play() 
                     end
 
-                    self.gameObject.parent.score = self.gameObject.parent.score + reward
-                    self.isColliding = true
+                    self.gameObject.parent.score = self.gameObject.parent.score + self.gameObject.reward
+                    r.isRewarded = true
 
                     self.gameObject.parent.discsLanded = self.gameObject.parent.discsLanded + 1
                     if self.gameObject.parent.state == PlinkoBoardStates.PLAY then
@@ -155,15 +164,6 @@ function PlinkoBoard: setupRewardsArea(pegSpaceWidth)
                         end
                     end
                 end
-            end,
-            draw = function (self)
-                local r, g, b, a = love.graphics.getColor() 
-                local rCoef = reward / maxReward
-                local color = love.graphics.setColor(0.3 *rCoef, 0.9 *rCoef, 0.1 *rCoef, 0.5)
-                if self.isColliding then love.graphics.setColor(0.9, 0.1, 0.2, 0.5) end
-                love.graphics.rectangle("fill", p.x, p.y, pegSpaceWidth, pegSpaceWidth)
-                love.graphics.setColor(r, g, b, a)
-                love.graphics.print(reward, p.x, p.y + pegSpaceWidth, -pi_half, 3)
             end
         }
 
@@ -196,7 +196,7 @@ function PlinkoBoard: onPressed(x, y, button, istouch)
         self:changeState()
     end
 
-    if self.state == PlinkoBoardStates.PLAY then
+    if self.state == PlinkoBoardStates.PLAY and #self.discs > 0 then
         local releasedDisc = self.discs[#self.discs]
         releasedDisc.isPlayerControlled = false
 
@@ -205,13 +205,9 @@ function PlinkoBoard: onPressed(x, y, button, istouch)
         local r = Rigidbody: init {
             gameObject = releasedDisc,
             mass = 5,
+            shouldBounce = true,
             collisionCategory = "discsCategory",
-            onCollide = function (self, r)
-                if r.collisionCategory == "rewardsCategory" then
-                    self.gameObject.parent:removeChild(self)
-                    World.removeRigidbody(self)
-                end
-            end
+            collisionMask = { pegsCategory = true, wallsCategory = true, worldCategory = true }
         }
 
         self.discs[#self.discs] = nil

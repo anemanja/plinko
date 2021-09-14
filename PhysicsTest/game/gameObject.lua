@@ -53,8 +53,8 @@ function GameObject: updateAbsolutePosition ()
 end
 
 function GameObject: getRelativePositionOfAbsolute(newAbsolutePosition)
-    local parentAbsolutePosition = Vector2.zero()
-    if self.parent then parentAbsolutePosition = self.parent.absolutePosition end
+    local parentAbsolutePosition = Vector2:init(unpack(self.position))
+    if parent then parentAbsolutePosition = parent.absolutePosition end
     return newAbsolutePosition - parentAbsolutePosition
 end
 

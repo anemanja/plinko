@@ -107,17 +107,17 @@ function Rigidbody: draw ()
 
     local boundingBox = self.rigidbody:boundingBox()
     love.graphics.rectangle("line", boundingBox.x, boundingBox.y, boundingBox.width, boundingBox.height)
-
-    if self.rigidbody.velocity.x ~= 0 or self.rigidbody.velocity.y ~= 0 then 
+--[[
+    if self.rigidbody.velocity.x ~= 0 and self.rigidbody.velocity.y ~= 0 then 
         love.graphics.setColor(0.3, 0.9, 0.3, 1)
         love.graphics.line(
-            self.rigidbody.absolutePosition.x, 
-            self.rigidbody.absolutePosition.y, 
-            self.rigidbody.absolutePosition.x + self.rigidbody.velocity.x, 
-            self.rigidbody.absolutePosition.y + self.rigidbody.velocity.y
+            self.position.x, 
+            self.position.y, 
+            self.position.x + self.rigidbody.velocity.x, 
+            self.position.y + self.rigidbody.velocity.y
         )
     end
-
+--]]
     love.graphics.setColor(red, green, blue, alpha)
 end
 
@@ -125,22 +125,36 @@ end
 
 function Rigidbody: bounce(r, dt)
     if not self.shouldBounce then return end 
-        local d = self.absolutePosition - r.absolutePosition
-        local D = r.boundingBoxRadius + self.boundingBoxRadius + 2
 
-        local dn = d:normalized()
-        local disp = dn:scale(D)
-        local absPos = r.absolutePosition + disp
-        self.gameObject.position = self.gameObject.position - (self.absolutePosition - absPos)
-        self.gameObject.absolutePosition = self.gameObject:updateAbsolutePosition()
-        self:updateAbsolutePosition()
-       
+    --[[
+        we must return the self along it's path so it is not intersecting with r
+        new position p = p0 + x * v, p0 - old position, v - velocity,  vd = x * v, x <= 0
+        || p - r.p ||^2 = R^2 + r^2 - has to be true, so after some calculations we get a quadratic equation a * x^2 + b * x + c = 0
+    --]]
+    local a = self.velocity:power()
+    local b = 2 * (self.velocity * r.gameObject.position) - self.velocity * self.gameObject.position
+    local c = self.gameObject.position:power() + r.gameObject.position:power() - 2 * (self.gameObject.position * r.gameObject.position) - self.boundingBoxRadius * self.boundingBoxRadius - r.boundingBoxRadius * self.boundingBoxRadius
+
+    local root = math.sqrt( b * b - 4*a*c )
+    local x = 0.5 * ( root - b ) / a
+    if x < 0 then x = 0.5 * ( -root - b) / a end
+    --]]
+    self.gameObject.position = self.gameObject.position - self.velocity:scale(x * dt)
+
     -- if r is a circle, we need to find the tangent first, and then just bounce it from it like from a wall.
-    --if r.shape == "circle" then
+    if r.shape == "circle" then
+        -- first find tangent between the circles = perpendicular to the line conecting the centers
+        local n = (r.gameObject.position - self.gameObject.position):perpendicular()
 
-        self.velocity = self.velocity - d:scale(1.5*(self.velocity * d) / d:power())
-        --return
-    --end
+        -- now we need the perpendicular's angle
+        local angle = n:angle()
+
+        -- we rotate the velocity vector y the perependicular's angle and transform it in the normal coordinate system
+        local tempV = self.velocity:rotate(-angle)
+        local tempBounceV = Vector2:init(tempV.x, -tempV.y)
+        self.velocity = tempBounceV:rotate(angle)
+        return
+    end
 
     -- if r is a square, we need to find out from which of its sides is the self bouncing of
 
@@ -213,8 +227,8 @@ end
 World = {
     rigidbodies = {},
     drawBoundingBoxes = false,
-    gravity = Vector2:init(0, 5),
-    collisionCategory = "worldCategory",
+    gravity = Vector2:init(0, 0.981),
+    collisionCategory = "world-category",
     rigidbodyCategory = "rigidbody-category",
     allCategories = "all-categories"
 }
@@ -225,7 +239,6 @@ function World.update (dt)
     local num = #World.rigidbodies
     for _, r in pairs(World.rigidbodies) do
         if World.categoryAffectsMask(World.collisionCategory, r.collisionMask) then
-            --r:applyForce(World.gravity:scale(-r.velocity.y * 0.01))
             r:applyForce(World.gravity)
         end
         if World.hasMask(r.collisionMask) then -- objects with zero mask cannot be affected by colllisions with any category
